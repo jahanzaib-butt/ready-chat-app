@@ -1,0 +1,99 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<style>
+    /* WhatsApp theme color */
+    body {
+        background-color: #DCF8C6;
+    }
+    .create-room-container {
+        max-width: 500px;
+        margin: 50px auto;
+        padding: 40px;
+        background-color: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .create-room-container {
+        max-width: 500px;
+        margin: 50px auto;
+        padding: 40px;
+        background-color: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    .create-room-title {
+        color: #128C7E;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 28px;
+        font-weight: 700;
+    }
+    .form-group {
+        margin-bottom: 25px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #075E54;
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #E0E0E0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        border-color: #128C7E;
+        outline: none;
+    }
+    .submit-btn {
+        background-color: #128C7E;
+        color: white;
+        border: none;
+        padding: 14px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        width: 100%;
+        font-size: 16px;
+        font-weight: 600;
+        transition: background-color 0.3s ease;
+    }
+    .submit-btn:hover {
+        background-color: #0E7165;
+    }
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        color: #075E54;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.3s ease;
+    }
+    .back-link:hover {
+        color: #128C7E;
+    }
+</style>
+
+<div class="create-room-container">
+    <h1 class="create-room-title">Create Your Room</h1>
+    <form method="POST" action="">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+            </div>
+        {% endfor %}
+        <button type="submit" class="submit-btn">Create Room</button>
+    </form>
+    <a href="{% url 'home' %}" class="back-link">Back to Home</a>
+</div>
+{% endblock content %}

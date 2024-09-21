@@ -1,0 +1,102 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<h2>{{ room.name }}</h2>
+<p>{{ room.description }}</p>
+
+{% if room.host %}
+    <p>Host: {{ room.host.username }}</p>
+{% else %}
+    <p>Host: Anonymous</p>
+{% endif %}
+
+<div class="messages">
+    {% for message in room_messages %}
+    <div class="message">
+        <small>
+            {% if message.user %}
+                @{{ message.user.username }}
+            {% else %}
+                Anonymous
+            {% endif %}
+            {{ message.created|timesince }} ago:
+        </small>
+        <p>{{ message.body }}</p>
+    </div>
+    {% empty %}
+    <p>No messages in this room yet.</p>
+    {% endfor %}
+</div>
+
+{% if user.is_authenticated %}
+    <form id="message-form">
+        <input type="text" id="message-input" placeholder="Type a message...">
+        <button type="submit">Send</button>
+    </form>
+
+    <form method="POST" action="">
+        {% csrf_token %}
+        <input type="text" name="body" placeholder="Write your message here..." required/>
+        <input type="submit" value="Send"/>
+    </form>
+
+    <a href="{% url 'create-room' %}" class="btn btn-primary">Create Room</a>
+{% else %}
+    <p class="error-message">You must be logged in to send messages.</p>
+{% endif %}
+
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<a href="{% url 'home' %}">Back to Home</a>
+<script>
+    // ... existing code ...
+
+function fetchMessages(roomId) {
+    fetch(`/api/messages/${roomId}/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch messages');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Update UI with messages
+            displayMessages(data.messages);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Display an error message to the user
+            displayErrorMessage('Failed to load messages. Please try again later.');
+        });
+}
+
+function displayErrorMessage(message) {
+    // Implement this function to show an error message in your UI
+    const errorDiv = document.getElementById('error-message');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
+
+// ... rest of your existing code ...
+
+// Call fetchMessages periodically or when needed
+setInterval(() => fetchMessages(currentRoomId), 5000); // Fetch messages every 5 seconds
+
+{% if not user.is_authenticated %}
+    // Disable message sending for unauthenticated users
+    const messageForm = document.getElementById('message-form');
+    if (messageForm) {
+        messageForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            displayErrorMessage('You must be logged in to send messages.');
+        });
+    }
+{% endif %}
+</script>
+{% endblock %}

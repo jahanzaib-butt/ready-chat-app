@@ -1,0 +1,33 @@
+body .chat-container {
+    display: flex !important;
+    height: 100vh !important;
+}
+
+body .chat-container .room-list {
+    width: 30%;
+    border-right: 1px solid #ccc;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+body .chat-container .chat-messages {
+    width: 70%;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+body .chat-container #message-container {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+body .chat-container #message-form {
+    display: flex;
+    margin-top: 20px;
+}
+
+body .chat-container #message-input {
+    flex-grow: 1;
+    margin-right: 10px;
+}

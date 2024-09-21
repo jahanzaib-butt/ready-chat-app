@@ -1,0 +1,100 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="chat-container" style="display: flex; height: 100vh;">
+    <div class="room-list" style="width: 30%; border-right: 1px solid #ccc; padding: 20px; overflow-y: auto;">
+        <h2>Rooms</h2>
+        <ul>
+            {% for room in rooms %}
+                <li>
+                    <a href="#" class="room-link" data-room-id="{{ room.id }}">{{ room.name }}</a>
+                </li>
+            {% empty %}
+                <li>No rooms available</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="chat-messages" style="width: 70%; padding: 20px; display: flex; flex-direction: column;">
+        <h2>Chat</h2>
+        <div id="message-container" style="flex-grow: 1; overflow-y: auto;">
+            Select a room to start chatting
+        </div>
+        <form id="message-form" style="display: none;">
+            <input type="text" id="message-input" placeholder="Type your message...">
+            <button type="submit">Send</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    let currentRoomId = null;
+
+    document.querySelectorAll('.room-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentRoomId = e.target.dataset.roomId;
+            loadMessages(currentRoomId);
+            document.getElementById('message-form').style.display = 'flex';
+        });
+    });
+
+    function loadMessages(roomId) {
+        fetch(`/api/messages/${roomId}/`)
+            .then(response => response.json())
+            .then(data => {
+                const messageContainer = document.getElementById('message-container');
+                messageContainer.innerHTML = data.messages.map(message => 
+                    `<p><strong>${message.user}:</strong> ${message.body}</p>`
+                ).join('');
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    document.getElementById('message-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const messageInput = document.getElementById('message-input');
+        if (currentRoomId && messageInput.value.trim()) {
+            sendMessage(currentRoomId, messageInput.value);
+            messageInput.value = '';
+        }
+    });
+
+    function sendMessage(roomId, message) {
+        fetch('/api/send-message/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                room_id: roomId,
+                message: message
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                loadMessages(roomId);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}
+

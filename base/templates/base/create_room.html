@@ -1,0 +1,14 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<h1>{% if form.instance.id %}Edit Room{% else %}Create Room{% endif %}</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="{% if form.instance.id %}Update{% else %}Create{% endif %}" />
+</form>
+
+<a href="{% url 'home' %}">Back to Home</a>
+
+{% endblock %}

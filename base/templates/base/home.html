@@ -1,0 +1,615 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Rooms</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .sidebar, .chat-area {
+            height: 100%;
+            overflow-y: auto;
+        }
+        .sidebar {
+            background-color: #ffffff;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .room-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-bottom: 15px; /* Add some padding at the bottom */
+        }
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+        .chat-header {
+            background-color: #075E54;
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            padding: 24px;
+            overflow-y: auto;
+            background-color: #e5ddd5;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 70px; /* Add space for the fixed message box */
+        }
+        .message-wrapper {
+            width: 100%;
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .message {
+            max-width: 60%;
+            padding: 8px 12px;
+            border-radius: 7.5px;
+            position: relative;
+            word-wrap: break-word;
+        }
+        .message.received {
+            background-color: #ffffff;
+            align-self: flex-start;
+        }
+        .message.sent {
+            background-color: #dcf8c6;
+            margin-left: auto;
+        }
+        .message-content {
+            margin-right: 60px; /* Make space for the time */
+        }
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            position: absolute;
+            right: 8px;
+            bottom: 8px;
+        }
+        #message-form {
+            display: flex;
+            padding: 16px;
+            background-color: #f0f2f5;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+        #message-input {
+            flex-grow: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 24px;
+            margin-right: 12px;
+            font-size: 16px;
+        }
+        #message-form button {
+            background-color: #128C7E;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 24px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .room-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            position: relative;
+        }
+        .room-item h3 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+        .latest-message {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 60px; /* Make space for the time */
+        }
+        .message-sender {
+            font-weight: 500;
+        }
+        .message-time {
+            font-size: 12px;
+            color: #999;
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .no-messages {
+            font-size: 14px;
+            color: #999;
+            margin: 0;
+            font-style: italic;
+        }
+        .room-list-header {
+            padding: 16px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            background-color: #f0f0f0;
+        }
+        .whatsapp-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .whatsapp-logo {
+            width: 48px;
+            height: 48px;
+            margin-right: 12px;
+        }
+        .room-list-header h2 {
+            margin: 0;
+            color: #128C7E;
+            font-size: 28px;
+            font-weight: 500;
+        }
+        .create-room-btn {
+            display: inline-block;
+            background-color: #25D366;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            text-align: center;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .create-room-btn:hover {
+            background-color: #128C7E;
+        }
+        .about-icon {
+            cursor: pointer;
+            font-size: 24px; /* Increase the size */
+            padding: 8px; /* Add some padding for a larger touch target */
+            border-radius: 50%; /* Make it circular */
+            transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+        }
+        .about-icon:hover {
+            background-color: rgba(255, 255, 255, 0.1); /* Slight highlight on hover */
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .delete-room-btn {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .delete-room-btn:hover {
+            background-color: #ff1a1a;
+        }
+
+        .auth-buttons {
+            padding: 15px;
+            background-color: #ffffff;
+            border-top: 1px solid #ffffff;
+            text-align: center;
+        }
+        .auth-button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .login-button {
+            background-color: #4CAF50;
+            color: white;
+            border: 2px solid #4CAF50;
+        }
+        .login-button:hover {
+            background-color: white;
+            color: #4CAF50;
+        }
+        .register-button {
+            background-color: #008CBA;
+            color: white;
+            border: 2px solid #008CBA;
+        }
+        .register-button:hover {
+            background-color: white;
+            color: #008CBA;
+        }
+
+        .logout-container {
+            padding: 15px;
+            background-color: #ffffff;
+            text-align: center;
+            border-top: 1px solid #ffffff;
+        }
+
+
+        .logout-button {
+            display: inline-block;
+            width: auto;
+            padding: 10px 20px;
+            background-color: #ff4d4d;
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-weight: bold;
+            text-align: center;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .logout-button:hover {
+            background-color: #ff1a1a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="room-list">
+                <div class="room-list-header">
+                    <div class="whatsapp-header">
+                        <img src="{% static 'images/icons8-whatsapp-48.png' %}" alt="Whatsapp Logo" class="whatsapp-logo">
+                        <h2>Whatsapp</h2>
+                    </div>
+                    <a href="{% url 'create-room' %}" class="create-room-btn">Create Room</a>
+                </div>
+                {% for room in rooms %}
+                <div class="room-item" data-room-id="{{ room.id }}" data-room-host="{{ room.host }}" data-room-description="{{ room.description }}">
+                    <h3>{{ room.name }}</h3>
+                    {% if room.latest_message %}
+                        <p class="latest-message">
+                            <span class="message-sender">{{ room.latest_message.user.username|default:"Anonymous" }}:</span>
+                            {{ room.latest_message.body|truncatechars:30 }}
+                        </p>
+                        <span class="message-time">{{ room.latest_message.created|time:"H:i" }}</span>
+                    {% else %}
+                        <p class="no-messages">No messages yet</p>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <p>No rooms available. Be the first to create one!</p>
+                {% endfor %}
+            </div>
+            {% if user.is_authenticated %}
+                <div class="logout-container">
+                    <a href="{% url 'logout' %}" class="logout-button">Logout</a>
+                </div>
+            {% else %}
+                <div class="auth-buttons">
+                    <a href="{% url 'login' %}" class="auth-button login-button">Login</a>
+                    <a href="{% url 'register' %}" class="auth-button register-button">Register</a>
+                </div>
+            {% endif %}
+        </div>
+        <div class="chat-area">
+            <div class="chat-header">
+                <h2 id="current-room">Select a room</h2>
+                <span id="about-icon" class="about-icon">ℹ️</span>
+            </div>
+            <div class="chat-messages" id="message-container">
+                <!-- Messages will be loaded here -->
+            </div>
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Type a message...">
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="room-info-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Room Information</h2>
+            <p id="modal-room-host"></p>
+            <p id="modal-room-description"></p>
+            <button id="delete-room-btn" class="delete-room-btn">Delete Room</button>
+        </div>
+    </div>
+
+    <script>
+          let currentRoomId = null;
+            const modal = document.getElementById("room-info-modal");
+            const aboutIcon = document.getElementById("about-icon");
+            const closeBtn = document.getElementsByClassName("close")[0];
+
+            document.querySelectorAll('.room-item').forEach(room => {
+                room.addEventListener('click', (e) => {
+                    currentRoomId = room.dataset.roomId;
+                    document.querySelectorAll('.room-item').forEach(r => r.classList.remove('active'));
+                    room.classList.add('active');
+                    document.getElementById('current-room').textContent = room.querySelector('h3').textContent;
+                    document.getElementById('modal-room-host').textContent = `Host: ${room.dataset.roomHost}`;
+                    document.getElementById('modal-room-description').textContent = `Description: ${room.dataset.roomDescription}`;
+                    
+                    // Show or hide delete button based on whether the user is the host
+                    const deleteButton = document.getElementById('delete-room-btn');
+                    if (room.dataset.roomHost === '{{ request.user.username }}') {
+                        deleteButton.style.display = 'block';
+                        deleteButton.onclick = () => deleteRoom(currentRoomId);
+                    } else {
+                        deleteButton.style.display = 'none';
+                    }
+                    
+                    loadMessages(currentRoomId);
+                    document.getElementById('message-form').style.display = 'flex';
+                });
+            });
+
+    // ... (keep the rest of your existing code here)
+
+    document.getElementById('message-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        console.log('Form submitted');
+        const messageInput = document.getElementById('message-input');
+        if (currentRoomId && messageInput.value.trim()) {
+            console.log('Sending message:', messageInput.value);
+            sendMessage(currentRoomId, messageInput.value);
+            messageInput.value = '';
+        }
+    });
+
+        aboutIcon.onclick = function() {
+            modal.style.display = "block";
+        }
+
+        closeBtn.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        let isInitialLoad = true;
+
+        function loadMessages(roomId) {
+            fetch(`/api/messages/${roomId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const messageContainer = document.querySelector('.chat-messages');
+                    const scrollPosition = messageContainer.scrollTop;
+                    const isScrolledToBottom = messageContainer.scrollHeight - messageContainer.clientHeight <= messageContainer.scrollTop + 1;
+                    
+                    messageContainer.innerHTML = data.messages.map(message => 
+                        `<div class="message-wrapper">
+                            <div class="message ${message.user === '{{ request.user.username }}' ? 'sent' : 'received'}">
+                                <div class="message-content">
+                                    <strong>${message.user}:</strong> ${message.body}
+                                </div>
+                                <div class="message-time">${formatTime(message.created)}</div>
+                            </div>
+                        </div>`
+                    ).join('');
+                    
+                    if (isInitialLoad || isScrolledToBottom) {
+                        scrollToBottom();
+                        isInitialLoad = false;
+                    } else {
+                        messageContainer.scrollTop = scrollPosition;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function scrollToBottom() {
+            const messageContainer = document.querySelector('.chat-messages');
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function sendMessage(roomId, message) {
+            console.log('sendMessage called with:', roomId, message);
+            fetch('/api/send-message/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    room_id: roomId,
+                    message: message
+                })
+            })
+            .then(response => {
+                console.log('Response received:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Data received:', data);
+                if (data.status === 'success') {
+                    loadMessages(roomId);
+                } else {
+                    console.error('Failed to send message:', data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function updateRoomsList() {
+            fetch('/api/rooms/')
+                .then(response => response.json())
+                .then(data => {
+                    const roomList = document.querySelector('.room-list');
+                    data.rooms.forEach(room => {
+                        const existingRoom = roomList.querySelector(`[data-room-id="${room.id}"]`);
+                        if (existingRoom) {
+                            // Update existing room
+                            existingRoom.querySelector('h3').textContent = room.name;
+                            const latestMessage = existingRoom.querySelector('.latest-message');
+                            const messageTime = existingRoom.querySelector('.message-time');
+                            if (room.latest_message) {
+                                latestMessage.innerHTML = `<span class="message-sender">${room.latest_message.user || 'Anonymous'}:</span> ${room.latest_message.body}`;
+                                messageTime.textContent = formatTime(room.latest_message.created);
+                            } else {
+                                latestMessage.textContent = 'No messages yet';
+                                messageTime.textContent = '';
+                            }
+                        } else {
+                            // Add new room
+                            const newRoom = document.createElement('div');
+                            newRoom.className = 'room-item';
+                            newRoom.dataset.roomId = room.id;
+                            newRoom.dataset.roomHost = room.host;
+                            newRoom.dataset.roomDescription = room.description;
+                            newRoom.innerHTML = `
+                                <h3>${room.name}</h3>
+                                ${room.latest_message ? `
+                                    <p class="latest-message">
+                                        <span class="message-sender">${room.latest_message.user || 'Anonymous'}:</span>
+                                        ${room.latest_message.body}
+                                    </p>
+                                    <span class="message-time">${formatTime(room.latest_message.created)}</span>
+                                ` : `
+                                    <p class="no-messages">No messages yet</p>
+                                `}
+                            `;
+                            roomList.appendChild(newRoom);
+                        }
+                    });
+                })
+                .catch(error => console.error('Error updating rooms list:', error));
+        }
+
+        // Call updateRoomsList every 5 seconds
+        setInterval(updateRoomsList, 5000);
+
+        function deleteRoom(roomId) {
+            if (confirm('Are you sure you want to delete this room?')) {
+                fetch(`/api/delete-room/${roomId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Remove the room from the list
+                        const roomElement = document.querySelector(`.room-item[data-room-id="${roomId}"]`);
+                        if (roomElement) {
+                            roomElement.remove();
+                        }
+                        // Clear the chat area and close the modal
+                        currentRoomId = null;
+                        document.getElementById('current-room').textContent = 'Select a room';
+                        document.querySelector('.chat-messages').innerHTML = '';
+                        document.getElementById('message-form').style.display = 'none';
+                        modal.style.display = "none";
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        // New code for real-time updates
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/rooms/');
+
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if (data.type === 'room_update') {
+                // Move the updated room to the top of the list
+                const roomList = document.getElementById('room-list');
+                const roomItem = document.getElementById('room-' + data.room_id);
+                roomList.prepend(roomItem);
+            }
+        };
+    </script>
+</body>
+</html>

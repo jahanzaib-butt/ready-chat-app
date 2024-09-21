@@ -1,0 +1,19 @@
+{% extends 'main.html' %}
+{% block content %}
+<h1>Groups</h1>
+<ul>
+    {% for group in groups %}
+        <li>
+            <h2>{{ group.name }}</h2>
+            <p>{{ group.description }}</p>
+            <ul>
+                {% for message in messages %}
+                    {% if message.group == group %}
+                        <li>{{ message.user }}: {{ message.body }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}
